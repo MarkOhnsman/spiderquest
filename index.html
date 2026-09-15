@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#de0606" />
+  <title>Spider Training — Web-Slinger Academy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- SCREEN: Title -->
+  <section id="screen-title" class="screen active">
+    <div class="cover-image-wrap">
+      <img class="cover-image" src="spideys.jpg" alt="Spider-Man, Miles Morales, and Ghost-Spider" />
+    </div>
+    <h1 class="title title-main">Spider Training</h1>
+    <p class="title-sub">Web-Slinger Academy</p>
+    <p class="title-pitch">A 6-week gymnastics quest — warm up, get strong, stay flexible, and earn Spider-Tech Points.</p>
+
+    <div class="hero-name-wrap">
+      <p class="name-label">Your Hero Name</p>
+      <input id="hero-name-input" type="text" placeholder="Enter your hero name..." maxlength="24" />
+    </div>
+
+    <button class="btn btn-primary pulse" id="start-btn">Swing Into Training 🕸️</button>
+    <p class="title-footer">Progress saved on this device</p>
+  </section>
+
+  <!-- SCREEN: Hub -->
+  <section id="screen-hub" class="screen">
+
+    <div id="complete-overlay" class="hidden">
+      <div class="complete-star">🕷️</div>
+      <div class="complete-msg">Trial Complete!</div>
+      <div class="complete-sub" id="complete-day"></div>
+      <div class="complete-sub" id="complete-workout"></div>
+      <div class="complete-sub" id="complete-xp"></div>
+      <div class="complete-sub" id="complete-points"></div>
+      <button class="btn btn-success" id="complete-close-btn">Return to Hub</button>
+    </div>
+
+    <div class="hub-header">
+      <div class="hub-crest">🕸️</div>
+      <div class="hub-info">
+        <div class="hub-rank" id="rank-badge">Backyard Hero</div>
+        <div class="xp-bar-wrap">
+          <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="hub-side">
+        <span class="streak-badge" id="streak-count">🔥 0</span>
+        <span class="points-badge" id="points-balance">🕸️ 0</span>
+        <button class="btn-icon" id="sound-toggle-btn">🔊</button>
+      </div>
+    </div>
+
+    <div class="streak-strip" id="streak-strip"></div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-today-btn">Today</button>
+      <button class="tab-btn" id="tab-records-btn">Records</button>
+      <button class="tab-btn" id="tab-codex-btn">Codex</button>
+    </div>
+
+    <div id="tab-today" class="tab-content active">
+      <div id="session-preview" class="panel"></div>
+      <button class="btn btn-success" id="begin-trial-btn">Begin Trial 🕸️</button>
+      <button class="btn" id="skip-today-btn">Skip Today (Training Elsewhere)</button>
+    </div>
+
+    <div id="tab-records" class="tab-content">
+      <div id="records-list"></div>
+    </div>
+
+    <div id="tab-codex" class="tab-content">
+      <div id="codex-list"></div>
+    </div>
+
+  </section>
+
+  <!-- SCREEN: Training (shared drill area for all 3 phases) -->
+  <section id="screen-training" class="screen">
+    <div class="drill-phase-label" id="drill-phase-label">WARM-UP</div>
+    <div class="phase-dots" id="phase-dots">
+      <div class="phase-dot" id="phase-dot-warmup">Warm-Up</div>
+      <div class="phase-dot" id="phase-dot-power">Strength</div>
+      <div class="phase-dot" id="phase-dot-flex">Flex</div>
+    </div>
+
+    <div class="drill-round-note" id="drill-round-note"></div>
+
+    <div class="ring-wrap">
+      <div class="drill-ring" id="drill-ring"></div>
+      <div class="drill-timer" id="drill-timer">0.0s</div>
+    </div>
+
+    <div class="drill-name" id="drill-name"></div>
+    <div class="drill-detail" id="drill-detail"></div>
+
+    <input type="number" id="drill-rep-input" class="hidden" inputmode="numeric" min="0" placeholder="reps" />
+    <button class="btn btn-primary hidden" id="drill-action-btn">Go</button>
+  </section>
+
+</div>
+
+<script type="module" src="app/main.js"></script>
+</body>
+</html>
