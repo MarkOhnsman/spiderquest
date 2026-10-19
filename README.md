@@ -3,7 +3,7 @@
 **A 6-week, hands-free gymnastics quest — Spider-Man, Miles Morales, and Ghost-Spider style.**
 
 Spider Training turns daily gymnastics conditioning into a web-slinging quest. Each trial is one
-session (about 20 minutes) of three chained phases. Finish a trial, earn XP, climb the ranks from
+session of three chained phases. Finish a trial, earn XP, climb the ranks from
 **Backyard Hero** all the way to **Spider-Verse Legend**, and build a training streak.
 
 It's built to be **hands-free**: prop the phone up nearby and it calls out every drill aloud, beeps
