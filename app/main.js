@@ -14,6 +14,8 @@ import PowerService from "./services/PowerService.js";
 import FlexService from "./services/FlexService.js";
 import { installConsole } from "./console.js";
 import { sound } from "./utils/audio.js";
+import { stopSpeech } from "./utils/speech.js";
+import { clock } from "./utils/timer.js";
 
 const warmup = new WarmupService(state);
 const power = new PowerService(state);
@@ -44,8 +46,22 @@ $("start-btn").addEventListener("click", () => {
   showScreen("screen-hub");
 });
 
+function setPaused(paused) {
+  if (paused) {
+    clock.pause();
+    stopSpeech();
+  } else {
+    clock.resume();
+  }
+  $("drill-pause-btn").textContent = paused ? "▶ Resume" : "⏸ Pause";
+  $("screen-training").classList.toggle("paused", paused);
+}
+
+$("drill-pause-btn").addEventListener("click", () => setPaused(!clock.paused));
+
 $("begin-trial-btn").addEventListener("click", () => {
   if (state.isLockedToday()) return;
+  setPaused(false);
   showScreen("screen-training");
   controller.begin();
 });

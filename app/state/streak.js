@@ -1,12 +1,34 @@
-import { STREAK_MULTIPLIER_TIERS, MAX_GAP_WALK } from "../data/config.js";
+import { STREAK_MULTIPLIER_TIERS, MAX_GAP_WALK, STORAGE_PREFIX } from "../data/config.js";
+
+const DAY_OFFSET_KEY = `${STORAGE_PREFIX}_dev_dayOffset`;
 
 function pad(n) {
   return String(n).padStart(2, "0");
 }
 
+// Test cheat (web.nextDay in console.js): shifts "today" forward by n days.
+// Persisted so a reload doesn't jump back behind already-saved dates.
+export function getDayOffset() {
+  try {
+    return parseInt(localStorage.getItem(DAY_OFFSET_KEY), 10) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setDayOffset(n) {
+  try {
+    if (n) localStorage.setItem(DAY_OFFSET_KEY, String(n));
+    else localStorage.removeItem(DAY_OFFSET_KEY);
+  } catch {
+    // ignore storage failures
+  }
+}
+
 // Local (not UTC) date string, so a streak day always matches the kid's own calendar day.
 export function todayStr() {
   const d = new Date();
+  d.setDate(d.getDate() + getDayOffset());
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 

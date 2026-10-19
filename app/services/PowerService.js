@@ -2,6 +2,8 @@ import { $ } from "../ui/screens.js";
 import { beep } from "../utils/audio.js";
 import { speak } from "../utils/speech.js";
 import { runLeadIn } from "../utils/leadIn.js";
+import { endCue } from "../utils/endCue.js";
+import { after, countdown, stopwatch } from "../utils/timer.js";
 import { STRENGTH_ROUNDS, REP_WINDOW_MS, REST_BETWEEN_MS, TONES } from "../data/config.js";
 
 function fmtSeconds(sec) {
@@ -48,9 +50,12 @@ export default class PowerService {
     $("drill-action-btn").classList.add("hidden");
     $("drill-rep-input").classList.add("hidden");
 
-    runLeadIn(() => {
-      if (ex.mode === "hold") this._armHold(ex);
-      else this._armReps(ex);
+    runLeadIn({
+      announce: round === 1 ? `${ex.name}. ${ex.detail}` : `Round ${round}. ${ex.name}`,
+      onGo: () => {
+        if (ex.mode === "hold") this._armHold(ex);
+        else this._armReps(ex);
+      },
     });
   }
 
@@ -59,41 +64,36 @@ export default class PowerService {
     const btn = $("drill-action-btn");
     btn.textContent = "Release!";
     btn.classList.remove("hidden");
-    this._holdStart = Date.now();
+    this._holdElapsedMs = 0;
     setRing(0, "--primary");
     $("drill-timer").textContent = fmtSeconds(0);
-    this._holdInterval = setInterval(() => {
-      const elapsed = (Date.now() - this._holdStart) / 1000;
+    this._holdTimer = stopwatch((elapsedMs) => {
+      this._holdElapsedMs = elapsedMs;
+      const elapsed = elapsedMs / 1000;
       $("drill-timer").textContent = fmtSeconds(elapsed);
       setRing((elapsed / ex.targetSec) * 100, "--primary");
-    }, 100);
+    });
   }
 
   _armReps(ex) {
     this._armed = { mode: "reps", ex };
     $("drill-detail").textContent = `${ex.detail} Get ready to count your reps!`;
-    let lastWholeSecond = null;
+    const cue = endCue();
     const start = REP_WINDOW_MS;
-    let remaining = REP_WINDOW_MS;
     setRing(0, "--blue");
-    this._repInterval = setInterval(() => {
-      remaining -= 100;
-      const secondsLeft = Math.ceil(remaining / 1000);
-      if (remaining <= 0) {
-        clearInterval(this._repInterval);
-        beep(TONES.timeUp, 200);
+    this._repTimer = countdown(
+      REP_WINDOW_MS,
+      (remaining) => {
+        cue.onTick(remaining);
+        $("drill-timer").textContent = fmtSeconds(remaining / 1000);
+        setRing(((start - remaining) / start) * 100, "--blue");
+      },
+      () => {
         $("drill-timer").textContent = "0.0s";
         setRing(100, "--blue");
-        this._revealRepInput(ex);
-        return;
+        cue.end(() => this._revealRepInput(ex));
       }
-      if (secondsLeft <= 3 && secondsLeft !== lastWholeSecond) {
-        lastWholeSecond = secondsLeft;
-        beep(TONES.timeUp, 150);
-      }
-      $("drill-timer").textContent = fmtSeconds(remaining / 1000);
-      setRing(((start - remaining) / start) * 100, "--blue");
-    }, 100);
+    );
   }
 
   _revealRepInput(ex) {
@@ -113,11 +113,11 @@ export default class PowerService {
     let result;
 
     if (mode === "hold") {
-      clearInterval(this._holdInterval);
-      const elapsedSeconds = (Date.now() - this._holdStart) / 1000;
+      this._holdTimer.cancel();
+      const elapsedSeconds = this._holdElapsedMs / 1000;
       result = this.state.recordHold(ex.name, elapsedSeconds);
     } else {
-      clearInterval(this._repInterval);
+      this._repTimer.cancel();
       const raw = parseInt($("drill-rep-input").value, 10);
       const reps = Number.isFinite(raw) ? Math.max(0, raw) : 0;
       result = this.state.recordReps(ex.name, reps);
@@ -138,7 +138,7 @@ export default class PowerService {
     $("drill-rep-input").classList.add("hidden");
     this._armed = null;
 
-    setTimeout(() => this._afterExercise(), 1200);
+    after(1200, () => this._afterExercise());
   }
 
   _afterExercise() {
@@ -150,19 +150,16 @@ export default class PowerService {
     $("drill-name").textContent = "Rest";
     $("drill-detail").textContent = `Next up: ${nextEx.name}`;
     $("drill-round-note").textContent = "";
-    let remaining = REST_BETWEEN_MS;
     const start = REST_BETWEEN_MS;
-    setRing(0, "--teal");
-    const iv = setInterval(() => {
-      remaining -= 100;
-      if (remaining <= 0) {
-        clearInterval(iv);
-        this._startExercise(next);
-        return;
-      }
-      $("drill-timer").textContent = fmtSeconds(remaining / 1000);
-      setRing(((start - remaining) / start) * 100, "--teal");
-    }, 100);
+    setRing(0, "--muted");
+    countdown(
+      REST_BETWEEN_MS,
+      (remaining) => {
+        $("drill-timer").textContent = fmtSeconds(remaining / 1000);
+        setRing(((start - remaining) / start) * 100, "--muted");
+      },
+      () => this._startExercise(next)
+    );
   }
 
   _finish() {

@@ -1,7 +1,8 @@
 import { $ } from "../ui/screens.js";
-import { beep } from "../utils/audio.js";
-import { speak } from "../utils/speech.js";
-import { STRETCH_HOLD_MS, TONES } from "../data/config.js";
+import { runLeadIn } from "../utils/leadIn.js";
+import { endCue } from "../utils/endCue.js";
+import { countdown } from "../utils/timer.js";
+import { STRETCH_HOLD_MS } from "../data/config.js";
 
 function fmt(ms) {
   const s = Math.max(0, ms / 1000);
@@ -42,34 +43,32 @@ export default class FlexService {
     const ex = this._items[this._index];
     if (!ex) return this._finish();
 
-    speak(`Get into position: ${ex.name}. ${ex.cue}`);
     $("drill-name").textContent = ex.name;
     $("drill-detail").textContent = ex.cue;
     $("drill-round-note").textContent = `Stretch ${this._index + 1} of ${this._items.length}`;
-    beep(TONES.cue, 150);
-    this._countdown(STRETCH_HOLD_MS, () => {
-      beep(TONES.timeUp, 200);
-      setTimeout(() => this._advance(), 600);
+    runLeadIn({
+      announce: `Get into position: ${ex.name}. ${ex.cue}`,
+      onGo: () => this._countdown(STRETCH_HOLD_MS, () => this._advance()),
     });
   }
 
   _countdown(totalMs, onDone) {
-    const start = totalMs;
-    let remaining = totalMs;
+    const cue = endCue();
     setRing(0);
-    $("drill-timer").textContent = fmt(remaining);
-    const iv = setInterval(() => {
-      remaining -= 100;
-      if (remaining <= 0) {
-        clearInterval(iv);
+    $("drill-timer").textContent = fmt(totalMs);
+    countdown(
+      totalMs,
+      (remaining) => {
+        $("drill-timer").textContent = fmt(remaining);
+        setRing(((totalMs - remaining) / totalMs) * 100);
+        cue.onTick(remaining);
+      },
+      () => {
         setRing(100);
         $("drill-timer").textContent = fmt(0);
-        onDone();
-        return;
+        cue.end(onDone);
       }
-      $("drill-timer").textContent = fmt(remaining);
-      setRing(((start - remaining) / start) * 100);
-    }, 100);
+    );
   }
 
   _finish() {

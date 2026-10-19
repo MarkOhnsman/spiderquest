@@ -59,3 +59,32 @@ export function buzz(ms) {
   if (!sound.on) return;
   if (navigator.vibrate) navigator.vibrate(ms);
 }
+
+// Coach's-whistle trill: a high tone wobbled fast by a second oscillator.
+export function whistle(ms = 550) {
+  if (!sound.on) return;
+  const c = getCtx();
+  if (!c) return;
+  const t = c.currentTime;
+  const end = t + ms / 1000;
+  const osc = c.createOscillator();
+  const trill = c.createOscillator();
+  const trillDepth = c.createGain();
+  const gain = c.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 2600;
+  trill.frequency.value = 28;
+  trillDepth.gain.value = 180;
+  trill.connect(trillDepth);
+  trillDepth.connect(osc.frequency);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.03);
+  gain.gain.setValueAtTime(0.25, end - 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(t);
+  trill.start(t);
+  osc.stop(end);
+  trill.stop(end);
+}

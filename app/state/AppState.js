@@ -183,6 +183,17 @@ class AppState {
     this.points = 0;
     this.save();
   }
+
+  // Deletes the active hero's saved progress and the active-hero pointer.
+  wipe() {
+    try {
+      if (this.heroName) localStorage.removeItem(this._bucketKey(this.heroName));
+      localStorage.removeItem(ACTIVE_KEY);
+    } catch {
+      // ignore storage failures
+    }
+    Object.assign(this, freshState());
+  }
 }
 
 export const state = new AppState();

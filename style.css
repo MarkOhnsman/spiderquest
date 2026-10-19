@@ -352,6 +352,8 @@ body {
 #drill-rep-input.hidden { display: none; }
 
 #drill-action-btn { max-width: 260px; margin: 0 auto; }
+#drill-pause-btn { max-width: 260px; margin: 12px auto 0; }
+#screen-training.paused .ring-wrap { opacity: 0.35; }
 
 /* ── Complete overlay ── */
 #complete-overlay {

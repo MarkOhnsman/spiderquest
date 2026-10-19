@@ -1,16 +1,17 @@
 import { $ } from "../ui/screens.js";
-import { beep, buzz } from "../utils/audio.js";
-import { speak } from "../utils/speech.js";
-import { CARDIO_DURATION_MS, SHAPE_ROUNDS, SHAPE_HOLD_MS, SHAPE_REST_MS, TONES } from "../data/config.js";
+import { runLeadIn } from "../utils/leadIn.js";
+import { endCue } from "../utils/endCue.js";
+import { countdown } from "../utils/timer.js";
+import { CARDIO_DURATION_MS, SHAPE_ROUNDS, SHAPE_HOLD_MS, SHAPE_REST_MS } from "../data/config.js";
 
 function fmt(ms) {
   const s = Math.max(0, ms / 1000);
   return `${s.toFixed(1)}s`;
 }
 
-function setRing(pct) {
+function setRing(pct, colorVar = "--primary") {
   const ring = $("drill-ring");
-  if (ring) ring.style.background = `conic-gradient(var(--primary) ${pct}%, var(--bg-raised) 0)`;
+  if (ring) ring.style.background = `conic-gradient(var(${colorVar}) ${pct}%, var(--bg-raised) 0)`;
 }
 
 export default class WarmupService {
@@ -61,52 +62,48 @@ export default class WarmupService {
   }
 
   _runCardio(step) {
-    speak(`${step.ex.name}. ${step.ex.cue}`);
-    beep(TONES.cue, 150);
     $("drill-name").textContent = step.ex.name;
     $("drill-detail").textContent = step.ex.cue;
     $("drill-round-note").textContent = "Warm-up blast";
-    this._countdown(CARDIO_DURATION_MS, () => {
-      beep(TONES.timeUp, 200);
-      buzz(120);
-      this._advance();
+    runLeadIn({
+      announce: `${step.ex.name}. ${step.ex.cue}`,
+      onGo: () => this._countdown(CARDIO_DURATION_MS, () => this._advance(), endCue()),
     });
   }
 
   _runHold(step) {
-    if (step.announce) speak(`${step.ex.name}. ${step.ex.cue}`);
     $("drill-name").textContent = step.ex.name;
     $("drill-detail").textContent = step.ex.cue;
     $("drill-round-note").textContent = `Round ${step.round} of ${SHAPE_ROUNDS}`;
-    beep(TONES.cue, 150);
-    this._countdown(SHAPE_HOLD_MS, () => {
-      beep(TONES.timeUp, 200);
-      this._advance();
+    runLeadIn({
+      announce: step.announce ? `${step.ex.name}. ${step.ex.cue}` : `Round ${step.round}. ${step.ex.name}`,
+      onGo: () => this._countdown(SHAPE_HOLD_MS, () => this._advance(), endCue()),
     });
   }
 
   _runRest() {
     $("drill-detail").textContent = "Rest...";
-    this._countdown(SHAPE_REST_MS, () => this._advance());
+    this._countdown(SHAPE_REST_MS, () => this._advance(), null, "--muted");
   }
 
-  _countdown(totalMs, onDone) {
-    const start = totalMs;
-    let remaining = totalMs;
-    setRing(0);
-    $("drill-timer").textContent = fmt(remaining);
-    const iv = setInterval(() => {
-      remaining -= 100;
-      if (remaining <= 0) {
-        clearInterval(iv);
-        setRing(100);
+  // cue (optional): an endCue() to beep the last three seconds and whistle at zero.
+  _countdown(totalMs, onDone, cue, colorVar) {
+    setRing(0, colorVar);
+    $("drill-timer").textContent = fmt(totalMs);
+    countdown(
+      totalMs,
+      (remaining) => {
+        $("drill-timer").textContent = fmt(remaining);
+        setRing(((totalMs - remaining) / totalMs) * 100, colorVar);
+        if (cue) cue.onTick(remaining);
+      },
+      () => {
+        setRing(100, colorVar);
         $("drill-timer").textContent = fmt(0);
-        onDone();
-        return;
+        if (cue) cue.end(onDone);
+        else onDone();
       }
-      $("drill-timer").textContent = fmt(remaining);
-      setRing(((start - remaining) / start) * 100);
-    }, 100);
+    );
   }
 
   _finish() {
